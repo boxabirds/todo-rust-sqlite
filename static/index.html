@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+</head>
+<body>
+    <h1>Todo App</h1>
+    <input type="text" id="taskInput" placeholder="Add a new task">
+    <button id="addButton" onclick="addTodo()">Add Task</button>
+    <ul id="todoList"></ul>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchTodos();
+            const input = document.getElementById('taskInput');
+            input.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Prevent the default action to avoid form submission
+                    addTodo();
+                }
+            });
+        });
+
+        function fetchTodos() {
+            fetch('/todos')
+                .then(response => response.json())
+                .then(data => {
+                    const list = document.getElementById('todoList');
+                    list.innerHTML = ''; // Clear existing list
+                    data.forEach(todo => {
+                        const item = document.createElement('li');
+                        item.textContent = todo.task + (todo.done ? ' (done)' : '');
+                        const removeBtn = document.createElement('button');
+                        removeBtn.textContent = 'Remove';
+                        removeBtn.onclick = function() { removeTodo(todo.id); };
+                        item.appendChild(removeBtn);
+                        list.appendChild(item);
+                    });
+                });
+        }
+
+        function addTodo() {
+            const task = document.getElementById('taskInput').value;
+            if (task.trim() === "") {
+                alert("Task cannot be empty");
+                return;
+            }
+            fetch('/addTodo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ task: task, done: false }),
+            }).then(() => {
+                fetchTodos(); // Refresh the list
+                document.getElementById('taskInput').value = ''; // Clear the input field
+            });
+        }
+
+        function removeTodo(id) {
+            fetch(`/removeTodo/${id}`, { method: 'DELETE' })
+                .then(() => {
+                    fetchTodos(); // Refresh the list
+                });
+        }
+    </script>
+</body>
+</html>
